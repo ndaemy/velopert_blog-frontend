@@ -1,13 +1,22 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { useHistory } from 'react-router-dom';
 import AuthForm from '../../components/auth/AuthForm';
-import { changeField, initializeForm } from '../../modules/auth';
+import { changeField, initializeForm, login } from '../../modules/auth';
+import { check } from '../../modules/user';
 
 const LoginForm = () => {
+  const [error, setError] = useState(null);
+
   const dispatch = useDispatch();
-  const { form } = useSelector(({ auth }) => ({
+  const { form, auth, authError, user } = useSelector(({ auth, user }) => ({
     form: auth.login,
+    auth: auth.auth,
+    authError: auth.authError,
+    user: user.user,
   }));
+
+  const history = useHistory();
 
   // input change event handler
   const onChange = e => {
@@ -24,7 +33,8 @@ const LoginForm = () => {
   // form register event handler
   const onSubmit = e => {
     e.preventDefault();
-    // TODO: 구현 예정
+    const { username, password } = form;
+    dispatch(login({ username, password }));
   };
 
   // component가 처음 rendering될 때 form을 초기화함
@@ -32,12 +42,32 @@ const LoginForm = () => {
     dispatch(initializeForm('login'));
   }, [dispatch]);
 
+  useEffect(() => {
+    if (authError) {
+      console.log('오류 발생');
+      console.log(authError);
+      setError('로그인 실패');
+      return;
+    }
+    if (auth) {
+      console.log('로그인 성공');
+      dispatch(check());
+    }
+  }, [auth, authError, dispatch]);
+
+  useEffect(() => {
+    if (user) {
+      history.push('/');
+    }
+  }, [history, user]);
+
   return (
     <AuthForm
       type="login"
       form={form}
       onChange={onChange}
       onSubmit={onSubmit}
+      error={error}
     />
   );
 };
